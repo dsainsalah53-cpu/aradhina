@@ -1,0 +1,19 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in ['abdouking74@gmail.com'];
+    }
+
+    // ملفات PDF للمناشير: قراءة عامة، رفع وحذف للمشرف فقط (حتى 20 ميغابايت، PDF فقط)
+    match /pdf_circulars/{file} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && (request.method == 'delete'
+            || (request.resource.size < 20 * 1024 * 1024
+                && request.resource.contentType == 'application/pdf'));
+    }
+  }
+}
